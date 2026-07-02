@@ -1,40 +1,45 @@
 # restaurant-review-api
 
-REST API для управления ресторанами и отзывами (оценками).  
-Тестовое задание на позицию Java-разработчика.
+REST API для управления ресторанами и отзывами на Spring Boot 3 / Java 17.  
+Тестовое задание: демонстрирует одновременное применение **Spring Data JPA** и **Spring JDBC** в одном проекте.
 
 ---
 
-## Стек
+## Технологии
 
-| Компонент | Версия |
+| | |
 |---|---|
 | Java | 17 |
 | Spring Boot | 3.2.5 |
-| Maven | 3.8+ |
-| H2 | in-memory |
-| Lombok | via Spring Boot BOM |
+| Spring Data JPA | CRUD-репозитории |
+| Spring JDBC | `JdbcTemplate` для аналитических запросов |
+| H2 | in-memory база данных |
+| Lombok | сокращение boilerplate |
+| JUnit 5 + Mockito | unit- и интеграционные тесты |
+| Maven | сборка |
 
 ---
 
-## Архитектурное решение: JPA vs JDBC
+## Почему JPA и JDBC вместе
 
-В проекте **оба** подхода используются реально, а не для галочки:
+В проекте оба подхода применяются там, где они естественны:
 
-| Что | Подход | Почему |
+| Задача | Инструмент | Обоснование |
 |---|---|---|
-| CRUD для `City`, `Restaurant`, `Vote` | **Spring Data JPA** | Стандартный CRUD без дублирования SQL; JPA управляет связями и каскадами |
-| Список ресторанов по городу, сортировка по рейтингу | **JdbcTemplate** | Нативный `ORDER BY` выразительнее, чем JPA Sort; хорошо показывает возможности JDBC |
-| Пересчёт `averageRating` после каждого голоса | **JdbcTemplate** | Один `UPDATE … (SELECT AVG …)` не тащит все голоса в память; демонстрирует JPA+JDBC в одной транзакции |
+| CRUD для `City`, `Restaurant`, `Vote` | Spring Data JPA | Декларативный CRUD, управление связями, каскады — без ручного SQL |
+| Выборка ресторанов города по рейтингу | JdbcTemplate | `ORDER BY` в сыром SQL нагляднее, чем JPA `Sort`; хорошо масштабируется |
+| Пересчёт `averageRating` после каждого голоса | JdbcTemplate | Один `UPDATE … (SELECT AVG …)` — не тащит всю коллекцию в память |
 
-Ключевая точка совместного использования — `VoteServiceImpl`: JPA сохраняет/удаляет голос, вызывает `flush()`, затем JDBC пересчитывает среднее в той же транзакции.
+Ключевой момент совместной работы — `VoteServiceImpl`: JPA сохраняет/удаляет запись, вызывает `flush()`, после чего JDBC пересчитывает агрегат **в той же транзакции**.
 
 ---
 
-## Сборка и запуск
+## Быстрый старт
+
+**Требования:** Java 17, Maven 3.8+
 
 ```bash
-# Сборка (запускает тесты)
+# Сборка + тесты
 mvn clean install
 
 # Только тесты
@@ -44,15 +49,14 @@ mvn test
 mvn spring-boot:run
 ```
 
-Приложение стартует на `http://localhost:8080`.
-
-При запуске автоматически загружаются демо-данные: **3 города**, **5 ресторанов**, **12 отзывов**.
+Приложение запускается на `http://localhost:8080`.  
+При старте автоматически загружаются демо-данные: **3 города · 5 ресторанов · 12 отзывов**.
 
 ---
 
 ## H2 Console
 
-URL: `http://localhost:8080/h2-console`
+`http://localhost:8080/h2-console`
 
 | Поле | Значение |
 |---|---|
@@ -62,67 +66,67 @@ URL: `http://localhost:8080/h2-console`
 
 ---
 
-## API
+## Эндпоинты
 
-### Города
+### Города `/api/cities`
 
 ```bash
-# Список всех городов
-curl http://localhost:8080/api/cities
+GET    /api/cities          # список всех городов
+GET    /api/cities/{id}     # один город
+POST   /api/cities          # создать
+PUT    /api/cities/{id}     # обновить
+DELETE /api/cities/{id}     # удалить
+```
 
+### Рестораны `/api/restaurants`
+
+```bash
+GET    /api/restaurants                          # все рестораны (краткая форма)
+GET    /api/restaurants/{id}                     # ресторан + список отзывов
+POST   /api/restaurants                          # создать
+PUT    /api/restaurants/{id}                     # обновить
+DELETE /api/restaurants/{id}                     # удалить
+GET    /api/restaurants/by-city/{cityName}       # по городу, сортировка по рейтингу ↓ (JDBC)
+POST   /api/restaurants/{id}/votes               # добавить отзыв → пересчёт рейтинга
+GET    /api/restaurants/{id}/votes               # отзывы ресторана
+```
+
+### Голоса `/api/votes`
+
+```bash
+DELETE /api/votes/{id}      # удалить отзыв → пересчёт рейтинга
+```
+
+---
+
+## Примеры запросов
+
+```bash
 # Создать город
 curl -X POST http://localhost:8080/api/cities \
   -H "Content-Type: application/json" \
   -d '{"name": "Novosibirsk"}'
 
-# Обновить город
-curl -X PUT http://localhost:8080/api/cities/1 \
-  -H "Content-Type: application/json" \
-  -d '{"name": "New Name"}'
-
-# Удалить город
-curl -X DELETE http://localhost:8080/api/cities/1
-```
-
-### Рестораны
-
-```bash
-# Список всех ресторанов
-curl http://localhost:8080/api/restaurants
-
-# Ресторан с отзывами
-curl http://localhost:8080/api/restaurants/1
-
 # Создать ресторан (cityId из /api/cities)
 curl -X POST http://localhost:8080/api/restaurants \
   -H "Content-Type: application/json" \
-  -d '{"name": "My New Restaurant", "cityId": 1}'
+  -d '{"name": "Buro", "cityId": 1}'
 
-# Рестораны города, отсортированные по рейтингу ↓ (JDBC)
-curl "http://localhost:8080/api/restaurants/by-city/Moscow?sort=rating_desc"
-
-# Удалить ресторан
-curl -X DELETE http://localhost:8080/api/restaurants/1
-```
-
-### Отзывы
-
-```bash
-# Добавить отзыв (rating: 0-5)
+# Добавить отзыв — rating: 0–5
 curl -X POST http://localhost:8080/api/restaurants/1/votes \
   -H "Content-Type: application/json" \
-  -d '{"rating": 5, "comment": "Absolutely fantastic!"}'
+  -d '{"rating": 5, "comment": "Отличная кухня!"}'
 
-# Список отзывов ресторана
-curl http://localhost:8080/api/restaurants/1/votes
+# Рестораны Москвы, по убыванию рейтинга (JDBC-запрос)
+curl "http://localhost:8080/api/restaurants/by-city/Moscow?sort=rating_desc"
 
-# Удалить отзыв (averageRating пересчитывается автоматически)
+# Удалить отзыв (averageRating ресторана пересчитывается автоматически)
 curl -X DELETE http://localhost:8080/api/votes/3
 ```
 
 ---
 
-## Формат ошибок
+## Обработка ошибок
 
 Все ошибки возвращаются в едином формате:
 
@@ -138,7 +142,7 @@ curl -X DELETE http://localhost:8080/api/votes/3
 
 | Код | Ситуация |
 |---|---|
-| 400 | Невалидные данные (рейтинг вне 0-5, пустое имя) |
+| 400 | Невалидные данные (рейтинг вне 0–5, пустое имя) |
 | 404 | Ресторан / город / голос не найден |
 | 409 | Дубликат имени города |
 | 500 | Непредвиденная ошибка (стектрейс только в логах) |
@@ -148,18 +152,14 @@ curl -X DELETE http://localhost:8080/api/votes/3
 ## Тесты
 
 ```bash
-mvn test
+mvn test   # 21 тест, все зелёные
 ```
 
-- **`RestaurantServiceTest`** — unit-тесты сервисного слоя с Mockito
-- **`VoteServiceTest`** — проверка логики пересчёта рейтинга (ключевой бизнес-кейс)
-- **`RestaurantControllerIntegrationTest`** — интеграционные тесты через `MockMvc`:
-  - добавление голоса → пересчёт `averageRating`
-  - удаление голоса → пересчёт `averageRating`
-  - сортировка по городу (JDBC-путь)
-  - дубликат города → 409
-  - несуществующий ресторан → 404
-  - невалидный рейтинг → 400
+| Класс | Тип | Что проверяет |
+|---|---|---|
+| `RestaurantServiceTest` | Unit (Mockito) | CRUD, делегирование в JDBC DAO, исключения |
+| `VoteServiceTest` | Unit (Mockito) | Добавление/удаление голоса, пересчёт рейтинга после каждого вызова |
+| `RestaurantControllerIntegrationTest` | Интеграционный (MockMvc) | Полный HTTP-цикл: рейтинг после голосов, сортировка, 409/404/400 |
 
 ---
 
@@ -167,16 +167,17 @@ mvn test
 
 ```
 com.aston.restaurantreview
-├── entity        City, Restaurant, Vote
-├── repository    JPA-репозитории (CityRepository, RestaurantRepository, VoteRepository)
-├── dao           RestaurantJdbcDao  ← JDBC
+├── config        DataInitializer — демо-данные при старте
+├── controller    CityController, RestaurantController, VoteController
+├── dao           RestaurantJdbcDao  ← JDBC (by-city + recalculate AVG)
 ├── dto
 │   ├── request   CityRequest, RestaurantRequest, VoteRequest
 │   └── response  CityResponse, RestaurantResponse, RestaurantSummaryResponse, VoteResponse
-├── service       интерфейсы CityService, RestaurantService, VoteService
-│   └── impl      реализации
-├── controller    CityController, RestaurantController, VoteController
+├── entity        City, Restaurant, Vote
 ├── exception     EntityNotFoundException, DuplicateCityException,
-│                 ErrorResponse, GlobalExceptionHandler
-└── config        DataInitializer (CommandLineRunner с демо-данными)
+│                 ErrorResponse, GlobalExceptionHandler (@RestControllerAdvice)
+├── repository    CityRepository, RestaurantRepository, VoteRepository  ← JPA
+└── service
+    ├── CityService, RestaurantService, VoteService  (интерфейсы)
+    └── impl  (реализации)
 ```
