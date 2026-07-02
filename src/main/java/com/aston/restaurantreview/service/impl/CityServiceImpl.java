@@ -3,9 +3,11 @@ package com.aston.restaurantreview.service.impl;
 import com.aston.restaurantreview.dto.request.CityRequest;
 import com.aston.restaurantreview.dto.response.CityResponse;
 import com.aston.restaurantreview.entity.City;
+import com.aston.restaurantreview.exception.CityHasRestaurantsException;
 import com.aston.restaurantreview.exception.DuplicateCityException;
 import com.aston.restaurantreview.exception.EntityNotFoundException;
 import com.aston.restaurantreview.repository.CityRepository;
+import com.aston.restaurantreview.repository.RestaurantRepository;
 import com.aston.restaurantreview.service.CityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,7 @@ import java.util.stream.Collectors;
 public class CityServiceImpl implements CityService {
 
     private final CityRepository cityRepository;
+    private final RestaurantRepository restaurantRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -57,7 +60,14 @@ public class CityServiceImpl implements CityService {
     @Override
     @Transactional
     public void delete(Long id) {
-        cityRepository.delete(getOrThrow(id));
+        City city = getOrThrow(id);
+        long count = restaurantRepository.countByCityId(id);
+        if (count > 0) {
+            throw new CityHasRestaurantsException(
+                    "City '" + city.getName() + "' cannot be deleted: it has " + count + " associated restaurant(s)"
+            );
+        }
+        cityRepository.delete(city);
     }
 
     private City getOrThrow(Long id) {

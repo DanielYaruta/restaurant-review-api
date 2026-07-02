@@ -86,7 +86,9 @@ GET    /api/restaurants/{id}                     # ресторан + списо
 POST   /api/restaurants                          # создать
 PUT    /api/restaurants/{id}                     # обновить
 DELETE /api/restaurants/{id}                     # удалить
-GET    /api/restaurants/by-city/{cityName}       # по городу, сортировка по рейтингу ↓ (JDBC)
+GET    /api/restaurants/by-city/{cityName}       # по городу, сортировка по рейтингу (JDBC)
+                                                 # ?sort=rating_desc (по умолчанию) | rating_asc
+                                                 # любое другое значение → 400 Bad Request
 POST   /api/restaurants/{id}/votes               # добавить отзыв → пересчёт рейтинга
 GET    /api/restaurants/{id}/votes               # отзывы ресторана
 ```
@@ -117,8 +119,11 @@ curl -X POST http://localhost:8080/api/restaurants/1/votes \
   -H "Content-Type: application/json" \
   -d '{"rating": 5, "comment": "Отличная кухня!"}'
 
-# Рестораны Москвы, по убыванию рейтинга (JDBC-запрос)
+# Рестораны Москвы — по убыванию рейтинга (JDBC-запрос)
 curl "http://localhost:8080/api/restaurants/by-city/Moscow?sort=rating_desc"
+
+# По возрастанию рейтинга
+curl "http://localhost:8080/api/restaurants/by-city/Moscow?sort=rating_asc"
 
 # Удалить отзыв (averageRating ресторана пересчитывается автоматически)
 curl -X DELETE http://localhost:8080/api/votes/3
@@ -142,9 +147,9 @@ curl -X DELETE http://localhost:8080/api/votes/3
 
 | Код | Ситуация |
 |---|---|
-| 400 | Невалидные данные (рейтинг вне 0–5, пустое имя) |
+| 400 | Невалидные данные (рейтинг вне 0–5, пустое имя, недопустимое значение `sort`) |
 | 404 | Ресторан / город / голос не найден |
-| 409 | Дубликат имени города |
+| 409 | Дубликат имени города; попытка удалить город, у которого есть рестораны |
 | 500 | Непредвиденная ошибка (стектрейс только в логах) |
 
 ---

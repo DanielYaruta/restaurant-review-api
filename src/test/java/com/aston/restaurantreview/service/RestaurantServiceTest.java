@@ -22,6 +22,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -125,16 +126,38 @@ class RestaurantServiceTest {
     }
 
     @Test
-    void findByCityNameSortedByRating_delegatesToJdbcDao() {
+    void findByCityNameSortedByRating_desc_delegatesToJdbcDaoWithAscendingFalse() {
         List<RestaurantSummaryResponse> expected = List.of(
                 new RestaurantSummaryResponse(1L, "A", "Moscow", 5.0),
                 new RestaurantSummaryResponse(2L, "B", "Moscow", 3.0)
         );
-        when(restaurantJdbcDao.findByCityNameOrderByRatingDesc("Moscow")).thenReturn(expected);
+        when(restaurantJdbcDao.findByCityNameOrderByRating("Moscow", false)).thenReturn(expected);
 
-        List<RestaurantSummaryResponse> result = restaurantService.findByCityNameSortedByRating("Moscow");
+        List<RestaurantSummaryResponse> result = restaurantService.findByCityNameSortedByRating("Moscow", "rating_desc");
 
         assertThat(result).isEqualTo(expected);
-        verify(restaurantJdbcDao).findByCityNameOrderByRatingDesc("Moscow");
+        verify(restaurantJdbcDao).findByCityNameOrderByRating("Moscow", false);
+    }
+
+    @Test
+    void findByCityNameSortedByRating_asc_delegatesToJdbcDaoWithAscendingTrue() {
+        List<RestaurantSummaryResponse> expected = List.of(
+                new RestaurantSummaryResponse(2L, "B", "Moscow", 3.0),
+                new RestaurantSummaryResponse(1L, "A", "Moscow", 5.0)
+        );
+        when(restaurantJdbcDao.findByCityNameOrderByRating("Moscow", true)).thenReturn(expected);
+
+        List<RestaurantSummaryResponse> result = restaurantService.findByCityNameSortedByRating("Moscow", "rating_asc");
+
+        assertThat(result).isEqualTo(expected);
+        verify(restaurantJdbcDao).findByCityNameOrderByRating("Moscow", true);
+    }
+
+    @Test
+    void findByCityNameSortedByRating_invalidSort_throwsIllegalArgumentException() {
+        assertThatThrownBy(() -> restaurantService.findByCityNameSortedByRating("Moscow", "banana"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("banana");
+        verify(restaurantJdbcDao, never()).findByCityNameOrderByRating(any(), anyBoolean());
     }
 }

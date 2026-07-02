@@ -99,6 +99,32 @@ class RestaurantControllerIntegrationTest {
     }
 
     @Test
+    void getByCity_withSortAsc_returnsSortedByRatingAsc() throws Exception {
+        long cityId = createCity("Kazan");
+        long rest1Id = createRestaurant("Low Rated",  cityId);
+        long rest2Id = createRestaurant("High Rated", cityId);
+
+        addVote(rest1Id, 2, "Not great");
+        addVote(rest2Id, 5, "Fantastic");
+
+        mockMvc.perform(get("/api/restaurants/by-city/Kazan?sort=rating_asc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].name").value("Low Rated"))
+                .andExpect(jsonPath("$[1].name").value("High Rated"))
+                .andExpect(jsonPath("$[0].averageRating", closeTo(2.0, 0.01)))
+                .andExpect(jsonPath("$[1].averageRating", closeTo(5.0, 0.01)));
+    }
+
+    @Test
+    void getByCity_withInvalidSort_returns400() throws Exception {
+        mockMvc.perform(get("/api/restaurants/by-city/Moscow?sort=banana"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message", containsString("banana")));
+    }
+
+    @Test
     void getByCity_whenNoCityMatch_returnsEmptyList() throws Exception {
         mockMvc.perform(get("/api/restaurants/by-city/NonExistentCity"))
                 .andExpect(status().isOk())

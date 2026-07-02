@@ -27,18 +27,31 @@ public class RestaurantJdbcDao {
         this.jdbc = jdbc;
     }
 
+    // Two static templates — direction is chosen in Java, never from user input,
+    // which prevents SQL injection through the sort parameter.
+    private static final String SQL_BY_CITY_DESC = """
+            SELECT r.id, r.name, c.name AS city_name, r.average_rating
+              FROM restaurants r
+              JOIN cities c ON c.id = r.city_id
+             WHERE LOWER(c.name) = LOWER(?)
+             ORDER BY r.average_rating DESC
+            """;
+
+    private static final String SQL_BY_CITY_ASC = """
+            SELECT r.id, r.name, c.name AS city_name, r.average_rating
+              FROM restaurants r
+              JOIN cities c ON c.id = r.city_id
+             WHERE LOWER(c.name) = LOWER(?)
+             ORDER BY r.average_rating ASC
+            """;
+
     /**
-     * Returns all restaurants in the given city, ordered by averageRating descending.
+     * Returns restaurants in the given city ordered by averageRating.
+     * {@code ascending = true} → lowest first; {@code false} → highest first.
      * City name matching is case-insensitive.
      */
-    public List<RestaurantSummaryResponse> findByCityNameOrderByRatingDesc(String cityName) {
-        String sql = """
-                SELECT r.id, r.name, c.name AS city_name, r.average_rating
-                  FROM restaurants r
-                  JOIN cities c ON c.id = r.city_id
-                 WHERE LOWER(c.name) = LOWER(?)
-                 ORDER BY r.average_rating DESC
-                """;
+    public List<RestaurantSummaryResponse> findByCityNameOrderByRating(String cityName, boolean ascending) {
+        String sql = ascending ? SQL_BY_CITY_ASC : SQL_BY_CITY_DESC;
         return jdbc.query(sql, RESTAURANT_ROW_MAPPER, cityName);
     }
 

@@ -12,8 +12,12 @@ public interface RestaurantService {
 
     RestaurantResponse findById(Long id);
 
-    /** Implemented via JDBC — see RestaurantJdbcDao. */
-    List<RestaurantSummaryResponse> findByCityNameSortedByRating(String cityName);
+    /**
+     * Implemented via JDBC — see RestaurantJdbcDao.
+     * {@code sort} must be {@code "rating_desc"} or {@code "rating_asc"};
+     * any other value throws {@link IllegalArgumentException}.
+     */
+    List<RestaurantSummaryResponse> findByCityNameSortedByRating(String cityName, String sort);
 
     RestaurantResponse create(RestaurantRequest request);
 

@@ -21,10 +21,16 @@ public class GlobalExceptionHandler {
         return error(404, "Not Found", ex.getMessage(), req);
     }
 
-    @ExceptionHandler(DuplicateCityException.class)
+    @ExceptionHandler({DuplicateCityException.class, CityHasRestaurantsException.class})
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorResponse handleConflict(DuplicateCityException ex, HttpServletRequest req) {
+    public ErrorResponse handleConflict(RuntimeException ex, HttpServletRequest req) {
         return error(409, "Conflict", ex.getMessage(), req);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest req) {
+        return error(400, "Bad Request", ex.getMessage(), req);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

@@ -17,4 +17,6 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
     /** Fetches city and votes together to build the full RestaurantResponse. */
     @Query("SELECT DISTINCT r FROM Restaurant r JOIN FETCH r.city LEFT JOIN FETCH r.votes WHERE r.id = :id")
     Optional<Restaurant> findByIdWithVotesAndCity(@Param("id") Long id);
+
+    long countByCityId(Long cityId);
 }

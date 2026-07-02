@@ -33,15 +33,15 @@ public class RestaurantController {
     }
 
     /**
-     * Returns restaurants for a given city sorted by averageRating DESC (via JDBC).
-     * The {@code sort} param is accepted for API consistency; currently only rating_desc
-     * is supported and is always applied.
+     * Returns restaurants for a given city ordered by averageRating (via JDBC).
+     * {@code sort} accepts {@code rating_desc} (default) or {@code rating_asc};
+     * any other value yields 400 Bad Request.
      */
     @GetMapping("/by-city/{cityName}")
     public List<RestaurantSummaryResponse> getByCity(
             @PathVariable String cityName,
             @RequestParam(defaultValue = "rating_desc") String sort) {
-        return restaurantService.findByCityNameSortedByRating(cityName);
+        return restaurantService.findByCityNameSortedByRating(cityName, sort);
     }
 
     @PostMapping

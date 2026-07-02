@@ -43,8 +43,18 @@ public class RestaurantServiceImpl implements RestaurantService {
     }
 
     @Override
-    public List<RestaurantSummaryResponse> findByCityNameSortedByRating(String cityName) {
-        return restaurantJdbcDao.findByCityNameOrderByRatingDesc(cityName);
+    public List<RestaurantSummaryResponse> findByCityNameSortedByRating(String cityName, String sort) {
+        return restaurantJdbcDao.findByCityNameOrderByRating(cityName, parseSortParam(sort));
+    }
+
+    private boolean parseSortParam(String sort) {
+        return switch (sort) {
+            case "rating_asc"  -> true;
+            case "rating_desc" -> false;
+            default -> throw new IllegalArgumentException(
+                    "Invalid sort value '" + sort + "': must be 'rating_desc' or 'rating_asc'"
+            );
+        };
     }
 
     @Override
