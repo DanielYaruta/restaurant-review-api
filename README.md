@@ -179,7 +179,7 @@ com.aston.restaurantreview
 │   ├── request   CityRequest, RestaurantRequest, VoteRequest
 │   └── response  CityResponse, RestaurantResponse, RestaurantSummaryResponse, VoteResponse
 ├── entity        City, Restaurant, Vote
-├── exception     EntityNotFoundException, DuplicateCityException,
+├── exception     EntityNotFoundException, DuplicateCityException, CityHasRestaurantsException,
 │                 ErrorResponse, GlobalExceptionHandler (@RestControllerAdvice)
 ├── repository    CityRepository, RestaurantRepository, VoteRepository  ← JPA
 └── service
