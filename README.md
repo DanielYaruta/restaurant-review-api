@@ -3,21 +3,14 @@
 REST API для управления ресторанами и отзывами на Spring Boot 3 / Java 17.  
 Тестовое задание: демонстрирует одновременное применение **Spring Data JPA** и **Spring JDBC** в одном проекте.
 
----
-
-## Технологии
-
-| | |
-|---|---|
-| Java | 17 |
-| Spring Boot | 3.2.5 |
-| Spring Data JPA | CRUD-репозитории |
-| Spring JDBC | `JdbcTemplate` для аналитических запросов |
-| H2 | in-memory база данных |
-| Lombok | сокращение boilerplate |
-| JUnit 5 + Mockito | unit- и интеграционные тесты |
-| Maven | сборка |
-
+![Java](https://img.shields.io/badge/Java-17-ED8B00?style=flat-square&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.5-6DB33F?style=flat-square&logo=springboot&logoColor=white)
+![Spring Data JPA](https://img.shields.io/badge/Spring%20Data%20JPA-CRUD-6DB33F?style=flat-square&logo=spring&logoColor=white)
+![Spring JDBC](https://img.shields.io/badge/Spring%20JDBC-JdbcTemplate-6DB33F?style=flat-square&logo=spring&logoColor=white)
+![H2](https://img.shields.io/badge/H2-in--memory-4479A1?style=flat-square&logo=h2&logoColor=white)
+![Lombok](https://img.shields.io/badge/Lombok-boilerplate-A50034?style=flat-square)
+![JUnit5](https://img.shields.io/badge/JUnit%205-Mockito-25A162?style=flat-square&logo=junit5&logoColor=white)
+![Maven](https://img.shields.io/badge/Maven-build-C71A36?style=flat-square&logo=apachemaven&logoColor=white)
 ---
 
 ## Почему JPA и JDBC вместе
